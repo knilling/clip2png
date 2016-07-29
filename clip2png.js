@@ -1,5 +1,5 @@
 /* 
- * clip2png.js
+ * generate_report.js
  *
  * Copyright (c) 2016 Christopher Crawford
  * 
@@ -23,56 +23,170 @@
  *
  */
 
-var powerpnt = new ActiveXObject("PowerPoint.Application");
-var ppt = powerpnt.Presentations.Add(0);
-var slides = ppt.Slides;
-var slide = slides.Add(1, 12);
-var my_slide = slide.Shapes;
-try {
-	var shapes_collection = my_slide.Paste();
-	var screen_shot = shapes_collection(1);
-	ppt.PageSetup.SlideHeight = screen_shot.Height;
-	ppt.PageSetup.SlideWidth = screen_shot.Width;
-	screen_shot.Left = 0;
-	screen_shot.Top = 0;
-	screen_shot.ScaleHeight(1,-1);
-	screen_shot.ScaleWidth(1,-1);
-	var name = getFileName();
-	ppt.Slides(1).Export(name,"PNG");
+function readFile(f) {
+    return new ActiveXObject("Scripting.FileSystemObject").
+        OpenTextFile(f,1).ReadAll();
 }
-catch(e) {
+ 
+eval(readFile("lib\\includelib.js"));
+include("lib\\json3.min.js");
+include("lib\\underscore-min.js");
+include("lib\\msgbox.js");
+
+function print(s) {
+    WScript.Echo(s);
 }
-powerpnt.Quit();
 
+function printObj(obj) {
+    WScript.Echo(JSON.stringify(obj));
+}
 
-WScript.Quit();
+function formatStep(step) {
+    return [ step.step,
+             step.caption,
+             "Estimated Time to Complete: " + step.minutes,
+             "Screenshot: " + step.screenshot
+           ].join("\n");
+}
 
-function getFileName() {
-	var script_path = WScript.ScriptFullName;
-	var fs = new ActiveXObject("Scripting.FileSystemObject");
-	var script = fs.GetFile(script_path);
-	var folder = script.ParentFolder;
-	var files = new Enumerator(folder.Files);
-	var i = 1;
-	var file_array = [];
-	while (!files.atEnd()) {
-		var file = files.item();
-		if (file.Name.match(/\d{3}\.png$/gi)) {
-			//WScript.Echo(file.Path);
-			file_array.push(file.Name.split(".")[0]);
-		}
-		files.moveNext();
-	}
-	if(file_array.length === 0) {
-		file_array.push("0");
-	}
-	var new_file_array = file_array.sort(function(a,b){return a-b});
-	var name = new_file_array.pop();
-	var new_name = parseInt(name,10) + 1;
-	new_name = new_name + "";
-	var new_new_name = pad(new_name,3) + ".png";
-	var path = fs.BuildPath(folder.Path, new_new_name)
-	return path;
+function genSteps(n) {
+    var l = []
+    for(i = 1; i <= n; i++){
+        var s = "Step " + i;
+        l.push(s);
+    }
+    return l;
+}
+
+function addSteps(report){
+    var steps = genSteps(report.length);
+    var z = _.zip(steps,report);
+    return _.map(z,function(x){x[1]['step'] = x[0]; return x[1]; });    
+}
+
+function report() {
+    var r = JSON.parse(readFile("report.json"));
+    return addSteps(r);
+}
+
+function exec(cmd){
+    var shell = WScript.CreateObject("WScript.Shell");
+    var results = shell.Run(cmd,0,true);
+}
+
+function extract(o){
+    var SzPath = "bin\\7z1602-extra";
+    var SzExe = "7za.exe";
+    var command = "e";
+    var archivePath = o.to;
+    var switches = "-o" + archivePath;
+    var archiveName = o.from;
+    var filePath = "word\\media";
+    var fileName = o.file;
+    var cmd = [ "cmd /c",
+                [SzPath,SzExe].join("\\"),
+                command,
+                switches,
+                archiveName,
+                [filePath,fileName].join("\\")
+              ].join(" ");
+    exec(cmd);
+}
+
+function extractionSuccessful(f) {
+    var fs = new ActiveXObject("Scripting.FileSystemObject");
+    return fs.FileExists(f);
+}
+
+var WORD = (function () {
+    var instance;
+
+    function createInstance() {
+        var object = new ActiveXObject("Word.Application");
+        return object;
+    }
+    
+    return {
+        getInstance: function () {
+            try{
+                instance.Version;
+            }
+            catch(e){
+                instance = createInstance();
+                return instance;
+            }
+            return instance;
+        },
+        Quit: function(){
+            try{
+                instance.Version;
+            }
+            catch(e){
+                instance = null
+                return;
+            }
+            var saveChanges = false;
+            instance.Quit(saveChanges);
+            instance = null;
+            return;
+        }
+    };
+})();
+
+function newWordDoc(){
+   return WORD.getInstance().Documents.Add();
+}
+
+function paste(doc) {
+    doc.Range().Paste();
+}
+
+function save(doc,path){
+    doc.SaveAs2(path);
+}
+
+function close(doc){
+    var saveChanges = false;
+    doc.Close(saveChanges);
+}
+
+function fixPath(s){
+    var re = /\|/gi;
+    return s.replace(re,'\\');
+}
+
+function getCurrentDirectory() {
+    var s = WScript.ScriptFullName.split('\\');
+    s.pop();
+    return s.join('\\');
+}
+
+function getCurrentScriptName(){
+    var s = WScript.ScriptFullName.split('\\');
+    return s.pop();
+}
+
+function initFolder(f){
+    var fs = new ActiveXObject("Scripting.FileSystemObject");
+    if(fs.FolderExists(f)){
+        return;
+    }
+    try {
+        fs.CreateFolder(f);
+    }
+    catch(e){
+        initFolder(f.split("\\").reverse().slice(1).reverse().join("\\"));
+        fs.CreateFolder(f);
+    }
+}
+
+function delFolder(f){
+    //exec("cmd /c rmdir /s /q " + f);
+    var fs = new ActiveXObject("Scripting.FileSystemObject");
+    if(!fs.FolderExists(f)){
+        return;
+    }
+    fs.DeleteFolder(f,true);
 }
 
 function pad(num, size) {
@@ -81,3 +195,124 @@ function pad(num, size) {
 	s = s.substr(0,size)
     return s.split('').reverse().join('');
 }
+
+function getNewFilename(screenshots) {
+    var fs = new ActiveXObject("Scripting.FileSystemObject");
+    var folder;
+    try {
+        folder = fs.GetFolder(screenshots);
+    }
+    catch(e) {
+        initFolder(screenshots);
+        folder = fs.GetFolder(screenshots);
+    }
+    var files = new Enumerator(folder.Files);
+    var l = [];
+    while (!files.atEnd()) {
+	var f = files.item();
+	if (f.Name.match(/\d{3}\.png$/gi)) {
+	    l.push(f.Name.split(".")[0]);
+	}
+	files.moveNext();
+    }
+
+    if(l.length === 0) {
+	l.push("000");
+    }
+
+    var a = l.sort( function(a,b) { return a-b; } );
+    var b = a.pop();
+    var c = parseInt(b,10) + 1;
+    var d = pad(c.toString(),3) + ".png";
+    return fs.BuildPath(folder.Path, d);
+}
+
+function initConfig(){
+    var s = readFile("settings.json");
+    var config = JSON.parse(s);
+    config.fullPath = fixPath(config.fullPath);
+    config.projectPath = config.fullPath + "\\" + config.projectName;
+    config.tmp = config.projectPath + "\\tmp"
+    config.tmpDoc = config.tmp + "\\tmp.docx";
+    config.tmpPicName = "image1.png";
+    config.tmpPicPath = config.tmp + "\\" + config.tmpPicName;
+    config.pixPath = config.projectPath + "\\screenshots";
+    config.report = config.projectPath + "\\report.json";
+    config.cwd = WScript.CreateObject ("WScript.Shell").CurrentDirectory;
+    config.bin = config.cwd + "\\bin";
+    return config;
+}
+
+function move(o) {
+    fs = new ActiveXObject("Scripting.FileSystemObject");
+    fs.MoveFile(o.file, o.to);
+}
+
+function getCaption(){
+    return VB.InputBox("Write a complete sentence about this screenshot.");
+}
+
+function getTimeEstimate(){
+    return VB.InputBox("Roughly how many minutes spent on this screen?");
+}
+
+function readReport(r){
+    var fs = new ActiveXObject("Scripting.FileSystemObject");
+    if(!fs.FileExists(r)){
+        return [];
+    }
+    var s = readFile(r);
+    return JSON.parse(s);
+}
+
+function writeReport(report_obj, report_path){
+    var fs = new ActiveXObject("Scripting.FileSystemObject");
+    var f = fs.OpenTextFile(report_path, 2, true);
+    f.Write(JSON.stringify(report_obj));
+    f.Close();
+}
+
+function clip2png(){
+    var config = initConfig();
+    var doc = newWordDoc();
+    paste(doc);
+    initFolder(config.tmp);
+    save(doc,config.tmpDoc);
+    close(doc);
+
+    //if no more docs, quit Word
+    if(! WORD.getInstance().Documents.Count > 0){
+        WORD.Quit();
+    }
+
+    extract({'file': config.tmpPicName,
+             'from': config.tmpDoc,
+             'to'  : config.tmp});
+
+    var newFilePath = "";
+    if(extractionSuccessful(config.tmpPicPath)){
+        var newFilePath = getNewFilename(config.pixPath);
+        move({"file": config.tmpPicPath, "to": newFilePath});
+    }
+    else{
+        VB.MsgBox("There was no picture on your clipboard!",16,"Could not save your screenshot.");
+    }
+    delFolder(config.tmp);
+    var report = readReport(config.report);
+    var newEntry = {};
+    newEntry.screenshot = newFilePath.split("\\").pop();
+    newEntry.caption = getCaption();
+    newEntry.minutes = getTimeEstimate();
+    report.push(newEntry);
+    writeReport(report,config.report);
+}
+
+//function main() {
+//    print(_.map(report(),formatStep).join("\n\n"));
+//}
+
+function main() {
+    clip2png();
+}
+
+main();
