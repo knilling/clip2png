@@ -1,5 +1,5 @@
 /* 
- * generate_report.js
+ * clip2png.js
  *
  * Copyright (c) 2016 Christopher Crawford
  * 
