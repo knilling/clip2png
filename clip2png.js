@@ -22,6 +22,34 @@
  * SOFTWARE.
  *
  */
+(function(ws) {
+    var thisIsa32BitSystem = function() {
+  	var wmi = GetObject("winmgmts:root\\cimv2");
+  	var osSettingsCollection = wmi.ExecQuery("select * from Win32_OperatingSystem");
+  	var i = new Enumerator(osSettingsCollection);
+  	var config = i.item();
+  	if( /32-bit/.test(config.OSArchitecture) ){
+  	    return true;
+  	}
+  	else{
+  	    return false;
+  	}
+  }
+    
+    if(!thisIsa32BitSystem()){
+        if(!/SysWOW64/.test(ws.Path)){
+            var cmd = 'C:\\Windows\\SysWOW64\\cscript.exe //nologo "' + ws.scriptFullName + '"';
+            var args = ws.arguments;
+            for (var i = 0, len = args.length; i < len; i++) {
+                var arg = args(i);
+                cmd += ' ' + (~arg.indexOf(' ') ? '"' + arg + '"' : arg);
+            }
+            new ActiveXObject('WScript.Shell').run(cmd,0);
+            ws.quit();	  
+        }
+    }
+    
+})(WScript);
 
 function readFile(f) {
     return new ActiveXObject("Scripting.FileSystemObject").
