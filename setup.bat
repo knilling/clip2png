@@ -1,0 +1,1 @@
+start "" "bin\AutoHotkey112401\AutoHotkey.exe" "bin\AutoHotkey112401\hotkeys.ahk"
