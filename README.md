@@ -1,6 +1,6 @@
 # clip2png #
 
-**clip2png** is a [Microsoft JScript](https://en.wikipedia.org/wiki/JScript) that is designed to help simplify the job of collecting and organizing notes about how to accomplish a particular task on a Windows Platform.
+**clip2png** is a [Microsoft JScript](https://en.wikipedia.org/wiki/JScript) that is designed to help simplify the job of collecting and organizing notes about how to accomplish a particular task on a Windows Platform.  **clip2png** is particularly useful when collecting a series of screenshots.
 
 **clip2png** detects whether you have an picture on your Microsoft Windows clipboard.  If there is an picture on the clipboard, it dumps the clipboard to a PNG file, and helps you capture some basic metadata about why the image is interesting.
 
@@ -8,6 +8,8 @@ The script outputs:
 
 1. A collection of images, organized in chronological order.
 2. A simple JSON file
+
+The simple output from **clip2png** lends itself nicely to the development of other scripts that map the output to other reporting formats (i.e. Word Documents, HTML, PowerPoint Presentations, etc.)
 
 ## Requirements ##
 
@@ -33,3 +35,7 @@ The value for "fullPath" should use vertical bars instead of the traditional bac
 ## Using clip2png ##
 
 Simply double click on **clip2png.js**.
+
+Alternatively, you can run **clip2png** from **cmd.exe**:
+
+`cscript clip2png.js`
