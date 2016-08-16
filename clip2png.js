@@ -69,29 +69,6 @@ function printObj(obj) {
     WScript.Echo(JSON.stringify(obj));
 }
 
-function formatStep(step) {
-    return [ step.step,
-             step.caption,
-             "Estimated Time to Complete: " + step.minutes,
-             "Screenshot: " + step.screenshot
-           ].join("\n");
-}
-
-function genSteps(n) {
-    var l = []
-    for(i = 1; i <= n; i++){
-        var s = "Step " + i;
-        l.push(s);
-    }
-    return l;
-}
-
-function addSteps(report){
-    var steps = genSteps(report.length);
-    var z = _.zip(steps,report);
-    return _.map(z,function(x){x[1]['step'] = x[0]; return x[1]; });    
-}
-
 function report() {
     var r = JSON.parse(readFile("report.json"));
     return addSteps(r);
@@ -161,27 +138,6 @@ var WORD = (function () {
     };
 })();
 
-function newWordDoc(){
-   return WORD.getInstance().Documents.Add();
-}
-
-function paste(doc) {
-    doc.Range().Paste();
-}
-
-function save(doc,path){
-    doc.SaveAs2(path);
-}
-
-function close(doc){
-    var saveChanges = false;
-    doc.Close(saveChanges);
-    //if no more docs, quit Word
-    if(! WORD.getInstance().Documents.Count > 0){
-        WORD.Quit();
-    }
-}
-
 function fixPath(s){
     var re = /\|/gi;
     return s.replace(re,'\\');
@@ -213,7 +169,6 @@ function initFolder(f){
 }
 
 function delFolder(f){
-    //exec("cmd /c rmdir /s /q " + f);
     var fs = new ActiveXObject("Scripting.FileSystemObject");
     if(!fs.FolderExists(f)){
         return;
@@ -318,94 +273,113 @@ function writeReport(report_obj, report_path){
     f.Close();
 }
 
-function hasAnImage(doc){
-    if(doc.InlineShapes.Count > 0){
-        return true;
-    }
-}
+function DOC(){
+    this.doc = WORD.getInstance().Documents.Add();
+    this.IMG_MAX_HEIGHT = 6; // inches
+    this.IMG_MAX_WIDTH = 5.9; // inches
 
-function imageDimensions(doc){
-    return {"width":  doc.InlineShapes.Item(1).Width / 72,
-            "height": doc.InlineShapes.Item(1).Height / 72}
-}
+    this.paste = function() {
+        this.doc.Range().Paste();
+    };
 
-function imageTooWide(doc){
-    var img = imageDimensions(doc);
-    if(img.width >= 5.9){
-        return true;
-    }
-    else {
-        return false;
-    }
-}
+    this.save = function(path){
+        this.doc.SaveAs2(path);
+    };
 
-function imageTooTall(doc){
-    var img = imageDimensions(doc);
-    if(img.height >= 6){
-        return true;
+    this.close = function(){
+        var saveChanges = false;
+        this.doc.Close(saveChanges);
+        //if no more docs, quit Word
+        if(! WORD.getInstance().Documents.Count > 0){
+            WORD.Quit();
+        }
+    };
+
+    this.hasAnImage = function(){
+        if(this.doc.InlineShapes.Count > 0){
+            return true;
+        }
+    };
+
+    this.imgWidth = function(){
+        if(this.hasAnImage()){
+            return this.doc.InlineShapes.Item(1).Width / 72;
+        }
+        else {
+            return 0;
+        }
+    };
+
+    this.imgHeight = function(){
+        if(this.hasAnImage()){
+            return this.doc.InlineShapes.Item(1).Height / 72;
+        }
+        else {
+            return 0;
+        }
+    };
+
+    this.checkDimensions = function(){
+        if(this.imgWidth() > this.IMG_MAX_WIDTH){
+            throw "ImageTooWide";
+        }
+        if(this.imgHeight() > this.IMG_MAX_WIDTH){
+            throw "ImageTooTall";
+        }
     }
-    else {
-        return false;
-    }
+
 }
 
 function clip2png(){
     var config = initConfig();
-    var doc = newWordDoc();
-    paste(doc);
-    if(hasAnImage(doc)){
-        if(!imageTooWide(doc)){
-            if(!imageTooTall(doc)){
-                initFolder(config.tmp);
-                save(doc,config.tmpDoc);
-                close(doc);
-                extract({'file': config.tmpPicName,
-                         'from': config.tmpDoc,
-                         'to'  : config.tmp});
-                
-                var newFilePath = "";
-                if(extractionSuccessful(config.tmpPicPath)){
-                    newFilePath = getNewFilename(config.pixPath);
-                }
-                else{
-                    VB.MsgBox("There was no picture on your clipboard!",16,"Could not save your screenshot.");
-                    delFolder(config.tmp);
-                    WScript.Quit();
-                }
-                move({"file": config.tmpPicPath, "to": newFilePath});
-                delFolder(config.tmp);
-                var report = readReport(config.report);
-                var newEntry = {};
-                newEntry.screenshot = newFilePath.split("\\").pop();
-                newEntry.caption = getCaption();
-                newEntry.minutes = getTimeEstimate();
-                report.push(newEntry);
-                writeReport(report,config.report);
-            }
-            else {
-                var img = imageDimensions(doc);
-                VB.MsgBox("The picture is too tall. (" + img.height + " inches)",16,"Could not save your screenshot.");
-                close(doc);
-                WScript.Quit();
-            }
-        }
-        else{
-            var img = imageDimensions(doc);
-            VB.MsgBox("The picture is too wide. (" + img.width + " inches)",16,"Could not save your screenshot.");
-            close(doc);
-            WScript.Quit();
-        }
+    var doc = new DOC();
+    doc.paste();
+    if(doc.hasAnImage()){
+	try {
+	    doc.checkDimensions();
+	}
+	catch(e){
+	    if(e==="ImageTooTall"){
+		VB.MsgBox("The picture is too tall. (" + doc.imgHeight() + " inches tall.  Needs to be " + doc.IMG_MAX_HEIGHT + " inches or below.)",16,"Could not save your screenshot.");
+	    }
+	    if(e==="ImageTooWide"){
+		VB.MsgBox("The picture is too wide. (" + doc.imgWidth() + " inches wide.  Needs to be " + doc.IMG_MAX_WIDTH + " inches or below.)",16,"Could not save your screenshot.");
+	    }
+	    doc.close();
+	    WScript.Quit();
+	}
+	initFolder(config.tmp);
+	doc.save(config.tmpDoc);
+	doc.close();
+	extract({'file': config.tmpPicName,
+		 'from': config.tmpDoc,
+		 'to'  : config.tmp});
+        
+	var newFilePath = "";
+	if(extractionSuccessful(config.tmpPicPath)){
+	    newFilePath = getNewFilename(config.pixPath);
+	}
+	else{
+	    VB.MsgBox("There was no picture on your clipboard!",16,"Could not save your screenshot.");
+	    delFolder(config.tmp);
+	    WScript.Quit();
+	}
+	move({"file": config.tmpPicPath, "to": newFilePath});
+	delFolder(config.tmp);
+	var report = readReport(config.report);
+	var newEntry = {};
+	newEntry.screenshot = newFilePath.split("\\").pop();
+	newEntry.caption = getCaption();
+	newEntry.minutes = getTimeEstimate();
+	report.push(newEntry);
+	writeReport(report,config.report);
     }
     else {
         VB.MsgBox("There was no picture on your clipboard!",16,"Could not save your screenshot.");
-        close(doc);
+        doc.close();
         WScript.Quit();
     }
 }
-
-//function main() {
-//    print(_.map(report(),formatStep).join("\n\n"));
-//}
 
 function main() {
     clip2png();
