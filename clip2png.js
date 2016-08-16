@@ -69,11 +69,6 @@ function printObj(obj) {
     WScript.Echo(JSON.stringify(obj));
 }
 
-function report() {
-    var r = JSON.parse(readFile("report.json"));
-    return addSteps(r);
-}
-
 function exec(cmd){
     var shell = WScript.CreateObject("WScript.Shell");
     var results = shell.Run(cmd,0,true);
@@ -257,20 +252,28 @@ function getTimeEstimate(){
     }
 }
 
-function readReport(r){
+function REPORT(path){
+    this.path = path;
     var fs = new ActiveXObject("Scripting.FileSystemObject");
-    if(!fs.FileExists(r)){
-        return [];
-    }
-    var s = readFile(r);
-    return JSON.parse(s);
-}
+    var report;
 
-function writeReport(report_obj, report_path){
-    var fs = new ActiveXObject("Scripting.FileSystemObject");
-    var f = fs.OpenTextFile(report_path, 2, true);
-    f.Write(JSON.stringify(report_obj));
-    f.Close();
+    if(!fs.FileExists(this.path)){
+        this.report = [];
+    }
+    else {
+        var s = readFile(this.path);
+        this.report = JSON.parse(s);
+    }
+
+    this.writeToFile = function(){
+        var f = fs.OpenTextFile(this.path, 2, true);
+        f.Write(JSON.stringify(this.report));
+        f.Close();
+    };
+
+    this.add = function(entry){
+        this.report.push(entry);
+    };
 }
 
 function DOC(){
@@ -366,13 +369,13 @@ function clip2png(){
 	}
 	move({"file": config.tmpPicPath, "to": newFilePath});
 	delFolder(config.tmp);
-	var report = readReport(config.report);
+	var report = new REPORT(config.report);
 	var newEntry = {};
 	newEntry.screenshot = newFilePath.split("\\").pop();
 	newEntry.caption = getCaption();
 	newEntry.minutes = getTimeEstimate();
-	report.push(newEntry);
-	writeReport(report,config.report);
+	report.add(newEntry);
+	report.writeToFile();
     }
     else {
         VB.MsgBox("There was no picture on your clipboard!",16,"Could not save your screenshot.");
