@@ -69,11 +69,6 @@ function printObj(obj) {
     WScript.Echo(JSON.stringify(obj));
 }
 
-function exec(cmd){
-    var shell = WScript.CreateObject("WScript.Shell");
-    var results = shell.Run(cmd,0,true);
-}
-
 function extract(o){
     var SzPath = "bin\\7z1602-extra";
     var SzExe = "7za.exe";
@@ -90,6 +85,12 @@ function extract(o){
                 archiveName,
                 [filePath,fileName].join("\\")
               ].join(" ");
+
+    var exec = function(cmd){
+	var shell = WScript.CreateObject("WScript.Shell");
+	var results = shell.Run(cmd,0,true);
+    }
+
     exec(cmd);
 }
 
@@ -133,11 +134,6 @@ var WORD = (function () {
     };
 })();
 
-function fixPath(s){
-    var re = /\|/gi;
-    return s.replace(re,'\\');
-}
-
 function getCurrentDirectory() {
     var s = WScript.ScriptFullName.split('\\');
     s.pop();
@@ -171,13 +167,6 @@ function delFolder(f){
     fs.DeleteFolder(f,true);
 }
 
-function pad(num, size) {
-    var s = "00" + num;
-	s = s.split('').reverse().join('');
-	s = s.substr(0,size)
-    return s.split('').reverse().join('');
-}
-
 function getNewFilename(screenshots) {
     var fs = new ActiveXObject("Scripting.FileSystemObject");
     var folder;
@@ -205,6 +194,14 @@ function getNewFilename(screenshots) {
     var a = l.sort( function(a,b) { return a-b; } );
     var b = a.pop();
     var c = parseInt(b,10) + 1;
+
+    var pad = function(num, size) {
+	var s = "00" + num;
+	s = s.split('').reverse().join('');
+	s = s.substr(0,size)
+	return s.split('').reverse().join('');
+    };
+    
     var d = pad(c.toString(),3) + ".png";
     return fs.BuildPath(folder.Path, d);
 }
@@ -212,6 +209,12 @@ function getNewFilename(screenshots) {
 function initConfig(){
     var s = readFile("settings.json");
     var config = JSON.parse(s);
+
+    var fixPath = function(s){
+	var re = /\|/gi;
+	return s.replace(re,'\\');
+    }
+    
     config.fullPath = fixPath(config.fullPath);
     config.projectPath = config.fullPath + "\\" + config.projectName;
     config.tmp = config.projectPath + "\\tmp"
@@ -342,11 +345,21 @@ function clip2png(){
 	    doc.checkDimensions();
 	}
 	catch(e){
+	    var s1 = "Could not save your screenshot.";
+	    var imgIsToo = function(adjective,n,nMax){
+		return [
+		    "The picture is too " + adjective + ".  ",
+		    "(" + n + " inches tall.  ",
+		    "Needs to be " + nMax + " inches or below.)"
+		].join("");
+	    };
 	    if(e==="ImageTooTall"){
-		VB.MsgBox("The picture is too tall. (" + doc.imgHeight() + " inches tall.  Needs to be " + doc.IMG_MAX_HEIGHT + " inches or below.)",16,"Could not save your screenshot.");
+		var s2 = imgIsToo("tall", doc.imgHeight(), doc.IMG_MAX_HEIGHT);
+		VB.MsgBox(s2,16,s1);
 	    }
 	    if(e==="ImageTooWide"){
-		VB.MsgBox("The picture is too wide. (" + doc.imgWidth() + " inches wide.  Needs to be " + doc.IMG_MAX_WIDTH + " inches or below.)",16,"Could not save your screenshot.");
+		var s2 = imgIsToo("wide", doc.imgWidth(), doc.IMG_MAX_WIDTH);
+		VB.MsgBox(s2,16,s1);
 	    }
 	    doc.close();
 	    WScript.Quit();
