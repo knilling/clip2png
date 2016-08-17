@@ -33,8 +33,8 @@
   	}
   	else{
   	    return false;
-  	}
-  }
+	}
+    };
     
     if(!thisIsa32BitSystem()){
         if(!/SysWOW64/.test(ws.Path)){
@@ -51,9 +51,12 @@
     
 })(WScript);
 
+function FS(){
+    return new ActiveXObject("Scripting.FileSystemObject");
+}
+
 function readFile(f) {
-    return new ActiveXObject("Scripting.FileSystemObject").
-        OpenTextFile(f,1).ReadAll();
+    return FS().OpenTextFile(f,1).ReadAll();
 }
  
 eval(readFile("lib\\includelib.js"));
@@ -89,14 +92,9 @@ function extract(o){
     var exec = function(cmd){
 	var shell = WScript.CreateObject("WScript.Shell");
 	var results = shell.Run(cmd,0,true);
-    }
+    };
 
     exec(cmd);
-}
-
-function extractionSuccessful(f) {
-    var fs = new ActiveXObject("Scripting.FileSystemObject");
-    return fs.FileExists(f);
 }
 
 var WORD = (function () {
@@ -134,19 +132,8 @@ var WORD = (function () {
     };
 })();
 
-function getCurrentDirectory() {
-    var s = WScript.ScriptFullName.split('\\');
-    s.pop();
-    return s.join('\\');
-}
-
-function getCurrentScriptName(){
-    var s = WScript.ScriptFullName.split('\\');
-    return s.pop();
-}
-
 function initFolder(f){
-    var fs = new ActiveXObject("Scripting.FileSystemObject");
+    var fs = FS();
     if(fs.FolderExists(f)){
         return;
     }
@@ -160,7 +147,7 @@ function initFolder(f){
 }
 
 function delFolder(f){
-    var fs = new ActiveXObject("Scripting.FileSystemObject");
+    var fs = FS();
     if(!fs.FolderExists(f)){
         return;
     }
@@ -168,7 +155,7 @@ function delFolder(f){
 }
 
 function getNewFilename(screenshots) {
-    var fs = new ActiveXObject("Scripting.FileSystemObject");
+    var fs = FS();
     var folder;
     try {
         folder = fs.GetFolder(screenshots);
@@ -228,11 +215,6 @@ function initConfig(){
     return config;
 }
 
-function move(o) {
-    fs = new ActiveXObject("Scripting.FileSystemObject");
-    fs.MoveFile(o.file, o.to);
-}
-
 function getCaption(){
     var s = VB.InputBox("Write a complete sentence about this screenshot.");
     if(s.length===0){
@@ -257,7 +239,7 @@ function getTimeEstimate(){
 
 function REPORT(path){
     this.path = path;
-    var fs = new ActiveXObject("Scripting.FileSystemObject");
+    var fs = FS();
     var report;
 
     if(!fs.FileExists(this.path)){
@@ -283,6 +265,7 @@ function DOC(){
     this.doc = WORD.getInstance().Documents.Add();
     this.IMG_MAX_HEIGHT = 6; // inches
     this.IMG_MAX_WIDTH = 5.9; // inches
+    this.POINTS_PER_INCH = 72;
 
     this.paste = function() {
         this.doc.Range().Paste();
@@ -305,11 +288,14 @@ function DOC(){
         if(this.doc.InlineShapes.Count > 0){
             return true;
         }
+	else {
+	    return false;
+	}
     };
 
     this.imgWidth = function(){
         if(this.hasAnImage()){
-            return this.doc.InlineShapes.Item(1).Width / 72;
+            return this.doc.InlineShapes.Item(1).Width / this.POINTS_PER_INCH;
         }
         else {
             return 0;
@@ -318,7 +304,7 @@ function DOC(){
 
     this.imgHeight = function(){
         if(this.hasAnImage()){
-            return this.doc.InlineShapes.Item(1).Height / 72;
+            return this.doc.InlineShapes.Item(1).Height / this.POINTS_PER_INCH;
         }
         else {
             return 0;
@@ -367,12 +353,13 @@ function clip2png(){
 	initFolder(config.tmp);
 	doc.save(config.tmpDoc);
 	doc.close();
+	
 	extract({'file': config.tmpPicName,
 		 'from': config.tmpDoc,
 		 'to'  : config.tmp});
         
 	var newFilePath = "";
-	if(extractionSuccessful(config.tmpPicPath)){
+	if(FS().FileExists(config.tmpPicPath)){
 	    newFilePath = getNewFilename(config.pixPath);
 	}
 	else{
@@ -380,7 +367,7 @@ function clip2png(){
 	    delFolder(config.tmp);
 	    WScript.Quit();
 	}
-	move({"file": config.tmpPicPath, "to": newFilePath});
+	FS().MoveFile(config.tmpPicPath, newFilePath);
 	delFolder(config.tmp);
 	var report = new REPORT(config.report);
 	var newEntry = {};
