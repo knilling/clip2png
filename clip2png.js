@@ -315,7 +315,7 @@ function DOC(){
         if(this.imgWidth() > this.IMG_MAX_WIDTH){
             throw "ImageTooWide";
         }
-        if(this.imgHeight() > this.IMG_MAX_WIDTH){
+        if(this.imgHeight() > this.IMG_MAX_HEIGHT){
             throw "ImageTooTall";
         }
     }
