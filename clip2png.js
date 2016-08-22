@@ -90,7 +90,7 @@ function extract(o){
               ].join(" ");
 
     var exec = function(cmd){
-	var shell = WScript.CreateObject("WScript.Shell");
+	var shell = new ActiveXObject("WScript.Shell");
 	var results = shell.Run(cmd,0,true);
     };
 
@@ -210,7 +210,7 @@ function initConfig(){
     config.tmpPicPath = config.tmp + "\\" + config.tmpPicName;
     config.pixPath = config.projectPath + "\\screenshots";
     config.report = config.projectPath + "\\report.json";
-    config.cwd = WScript.CreateObject ("WScript.Shell").CurrentDirectory;
+    config.cwd = new ActiveXObject("WScript.Shell").CurrentDirectory;
     config.bin = config.cwd + "\\bin";
     return config;
 }
