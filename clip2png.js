@@ -335,7 +335,7 @@ function clip2png(){
 	    var imgIsToo = function(adjective,n,nMax){
 		return [
 		    "The picture is too " + adjective + ".  ",
-		    "(" + n + " inches tall.  ",
+		    "(" + n + " inches " + adjective + ".  ",
 		    "Needs to be " + nMax + " inches or below.)"
 		].join("");
 	    };
