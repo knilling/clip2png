@@ -263,8 +263,8 @@ function REPORT(path){
 
 function DOC(){
     this.doc = WORD.getInstance().Documents.Add();
-    this.IMG_MAX_HEIGHT = 3.71; // inches
-    this.IMG_MAX_WIDTH = 6; // inches
+    this.IMG_MAX_HEIGHT = 6; // inches
+    this.IMG_MAX_WIDTH = 3.71; // inches
     this.POINTS_PER_INCH = 72;
 
     this.paste = function() {
