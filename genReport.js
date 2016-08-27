@@ -501,6 +501,8 @@ function initConfig(){
     config.report = config.projectPath + "\\report.json";
     config.cwd = new ActiveXObject("WScript.Shell").CurrentDirectory;
     config.bin = config.cwd + "\\bin";
+    config.logo = config.projectPath + "\\logo.png";
+    config.doc = config.projectPath + "\\report.docx";
     return config;
 }
 
@@ -509,10 +511,12 @@ function genReport(){
     var report = JSON.parse(readFile(config.report));
     var doc = new DOC();
     add_page_numbers();
-    logo = "C:\\Users\\Chris\\Desktop\\ubnetdef.png"
-    executiveSummary(logo);
+    executiveSummary(config.logo);
     table_of_contents();
     time_estimate(report);
     procedure(report);
     update_toc();
+    doc.save(config.doc);
+    doc.close();
+    WORD.Quit();
 }
