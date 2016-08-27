@@ -298,16 +298,26 @@ function addTableHeaders(t){
 }
 
 function addTableData(t, steps){
-    t.Cell(1, 1).Select();
+    var row = 1;
+    t.Cell(row, 1).Select();
+    app().Selection.Collapse();
     for(var i = 0; i < steps.length; i++){
         addRow(t);
-        text(steps[i]);
+        row = row + 1;
+        t.Cell(row, 1).Select();
+        app().Selection.Collapse();
+        text(steps[i].caption);
+        t.Cell(row, 2).Select();
+        app().Selection.Collapse();
+        text(steps[i].minutes);
+        t.Cell(row, 1).Select();
+        app().Selection.Collapse();
     }
 }
 
 function addTotalRow(t){
     addRow(t);
-    text("Tota Time");
+    text("Total Time");
 }
 
 function setColumnWidths(t){
@@ -436,12 +446,12 @@ function time_estimate(steps){
 
 function procedure_step(i){
     var t = newTable(6, 1, false);
-    h2(i);
+    h2(i.caption);
     app().Selection.TypeBackspace();
     down(2);
-    text("Estimated Time Required: " + "<<X>>" + " minutes");
+    text("Estimated Time Required: " + i.minutes + " minutes");
     down(2);
-    var p = pic("C:\\Users\\Chris\\Desktop\\ubnetdef.png", true);
+    var p = pic("C:\\Users\\Chris\\Desktop\\test_project\\screenshots\\" + i.screenshot, true);
     // wdAlignParagraphCenter = 1
     my_wdAlignParagraphCenter = 1;
     app().Selection.ParagraphFormat.Alignment = my_wdAlignParagraphCenter
@@ -495,12 +505,14 @@ function initConfig(){
 }
 
 function genReport(){
+    var config = initConfig();
+    var report = JSON.parse(readFile(config.report));
+    var doc = new DOC();
     add_page_numbers();
     logo = "C:\\Users\\Chris\\Desktop\\ubnetdef.png"
     executiveSummary(logo);
     table_of_contents();
-    var steps = ["One", "Two", "Three"];
-    time_estimate(steps);
-    procedure(steps);
+    time_estimate(report);
+    procedure(report);
     update_toc();
 }
