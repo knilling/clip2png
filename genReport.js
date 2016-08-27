@@ -444,14 +444,14 @@ function time_estimate(steps){
     newPage();
 }
 
-function procedure_step(i){
+function procedure_step(project_dir,i){
     var t = newTable(6, 1, false);
     h2(i.caption);
     app().Selection.TypeBackspace();
     down(2);
     text("Estimated Time Required: " + i.minutes + " minutes");
     down(2);
-    var p = pic("C:\\Users\\Chris\\Desktop\\test_project\\screenshots\\" + i.screenshot, true);
+    var p = pic(project_dir + "\\screenshots\\" + i.screenshot, true);
     // wdAlignParagraphCenter = 1
     my_wdAlignParagraphCenter = 1;
     app().Selection.ParagraphFormat.Alignment = my_wdAlignParagraphCenter
@@ -459,11 +459,11 @@ function procedure_step(i){
     newPage();
 }
 
-function procedure(steps){
+function procedure(project_dir,steps){
     // Add Procedure Section
     stylized("Procedure", "Heading 1");
     for(var i = 0; i < steps.length; i++){
-        procedure_step(steps[i]);
+        procedure_step(project_dir,steps[i]);
     }
     app().Selection.TypeBackspace();
     app().Selection.TypeBackspace();
@@ -514,7 +514,7 @@ function genReport(){
     executiveSummary(config.logo);
     table_of_contents();
     time_estimate(report);
-    procedure(report);
+    procedure(config.projectPath,report);
     update_toc();
     doc.save(config.doc);
     doc.close();
