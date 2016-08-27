@@ -7,6 +7,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 ^+a::Run, "C:\Windows\Sysnative\SnippingTool.exe"
 ^+s::Run, mspaint
 ^+x::Run, cscript.exe //nologo clip2png.js, ..\.. , Hide
+^+1::Run, cscript.exe //nologo genReport.js, ..\.. , Hide
 ^+z::
 WinGetTitle, Title, A
 WinKill, %Title%

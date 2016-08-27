@@ -520,3 +520,5 @@ function genReport(){
     doc.close();
     WORD.Quit();
 }
+
+genReport();
