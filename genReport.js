@@ -472,6 +472,28 @@ function add_page_numbers(){
     app().ActiveDocument.Sections(1).Footers(my_wdHeaderFooterPrimary).PageNumbers.Add(my_wdAlignPageNumberCenter, false);
 }
 
+function initConfig(){
+    var s = readFile("settings.json");
+    var config = JSON.parse(s);
+
+    var fixPath = function(s){
+	var re = /\|/gi;
+	return s.replace(re,'\\');
+    }
+    
+    config.fullPath = fixPath(config.fullPath);
+    config.projectPath = config.fullPath + "\\" + config.projectName;
+    config.tmp = config.projectPath + "\\tmp"
+    config.tmpDoc = config.tmp + "\\tmp.docx";
+    config.tmpPicName = "image1.png";
+    config.tmpPicPath = config.tmp + "\\" + config.tmpPicName;
+    config.pixPath = config.projectPath + "\\screenshots";
+    config.report = config.projectPath + "\\report.json";
+    config.cwd = new ActiveXObject("WScript.Shell").CurrentDirectory;
+    config.bin = config.cwd + "\\bin";
+    return config;
+}
+
 function genReport(){
     add_page_numbers();
     logo = "C:\\Users\\Chris\\Desktop\\ubnetdef.png"
