@@ -215,7 +215,7 @@ function h2(s){
     stylized(s, "Heading 2");
 }
 
-function pic(path, border){
+function pic(path, border, caption){
     var p = app().ActiveDocument.Shapes.AddPicture(path, false, true);
     //wdWrapInline = 7
     var my_wdWrapInline = 7;
@@ -225,6 +225,10 @@ function pic(path, border){
         //RGB(0,0,0) = 0
         p.Line.ForeColor.RGB = 0;
     }
+    if(caption){
+        p.Select();
+        app().Selection.InsertCaption("Figure");
+    }
     return p;
 }
 
@@ -233,7 +237,7 @@ function execSumHeader(logo){
     var t = newTable(2, 2, false);
     var c = t.Cell(2, 1);
     t.Cell(1, 1).Merge(c);
-    pic(logo, false);
+    pic(logo, false, false);
     
     // Populate heading table
     right(2);
@@ -451,8 +455,12 @@ function procedure_step(project_dir,i){
     down(2);
     text("Estimated Time Required: " + i.minutes + " minutes");
     down(2);
-    var p = pic(project_dir + "\\screenshots\\" + i.screenshot, true);
+    var p = pic(project_dir + "\\screenshots\\" + i.screenshot, true, true);
+    up(1);
     // wdAlignParagraphCenter = 1
+    my_wdAlignParagraphCenter = 1;
+    app().Selection.ParagraphFormat.Alignment = my_wdAlignParagraphCenter
+    down(1);
     my_wdAlignParagraphCenter = 1;
     app().Selection.ParagraphFormat.Alignment = my_wdAlignParagraphCenter
     down(2);
