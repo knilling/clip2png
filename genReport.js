@@ -218,12 +218,12 @@ function h2(s){
 function pic(path, border){
     var p = app().ActiveDocument.Shapes.AddPicture(path, false, true);
     //wdWrapInline = 7
-    var my_wdWrapInline = 7
+    var my_wdWrapInline = 7;
     p.WrapFormat.Type = my_wdWrapInline;
     if (border){
-        p.Line.Weight = 1
+        p.Line.Weight = 1;
         //RGB(0,0,0) = 0
-        p.Line.ForeColor.RGB = 0
+        p.Line.ForeColor.RGB = 0;
     }
     return p;
 }
