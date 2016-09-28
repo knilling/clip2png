@@ -257,7 +257,12 @@ function execSumHeader(logo){
     down(1);
 }
 
-function execSumContent(){
+function totalMinutes(report){
+    var minutes_list = _.map(report, function(x){return parseInt(x.minutes);});
+    return _.reduce(minutes_list, function(memo, num){ return memo + num; }, 0);
+}
+
+function execSumContent(report){
     // Populate Excutive Summary Page
     h1("Executive Summary");
     h2("Objective");
@@ -283,9 +288,9 @@ function execSumContent(){
     newPage();
 }
 
-function executiveSummary(logo){
+function executiveSummary(logo,report){
     execSumHeader(logo);
-    execSumContent();
+    execSumContent(report);
 }
 
 function table_of_contents(){
@@ -325,10 +330,19 @@ function addTableData(t, steps){
     }
 }
 
-function addTotalRow(t){
+function addTotalRow(t, steps){ 
     addRow(t);
-    text("Total Time");
-}
+	// Plus 2 includes header and now the new total row
+    var row = steps.length + 2; 
+    t.Cell(row, 1).Select(); 
+    app().Selection.Collapse(); 
+    text("Total Time"); 
+    t.Cell(row, 2).Select(); 
+    app().Selection.Collapse(); 
+    text(totalMinutes(steps)); 
+    t.Cell(row, 1).Select(); 
+    app().Selection.Collapse(); 
+} 
 
 function setColumnWidths(t){
     // wdAdjustNone = 0
@@ -438,7 +452,7 @@ function time_estimate(steps){
         
     addTableHeaders(t);
     addTableData(t, steps);
-    addTotalRow(t);
+    addTotalRow(t ,steps);
     centerTable(t);
     formatHeaderRow(t);
     setTableFonts(t);
@@ -459,11 +473,12 @@ function procedure_step(project_dir,i){
     h2(i.caption);
     app().Selection.TypeBackspace();
     down(2);
-	if(i.minutes === 1){
-		text("Estimated Time Required: " + i.minutes + " minute");
+	var min = parseInt(i.minutes);
+	if(min === 1){
+		text("Estimated Time Required: " + min + " minute");
 	}
 	else{
-		text("Estimated Time Required: " + i.minutes + " minutes");
+		text("Estimated Time Required: " + min + " minutes");
 	}
     down(2);
     var p = pic(project_dir + "\\screenshots\\" + i.screenshot, true, true);
@@ -534,7 +549,7 @@ function genReport(){
     }
     var doc = new DOC();
     add_page_numbers();
-    executiveSummary(config.logo);
+    executiveSummary(config.logo, report);
     table_of_contents();
     time_estimate(report);
     procedure(config.projectPath,report);
