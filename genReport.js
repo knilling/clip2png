@@ -271,7 +271,13 @@ function execSumContent(){
     bulletedList(["<<Stuff>>", "<<Things>>", "<<More Things>>"]);
     
     h2("Time Estimate");
-    text("The reader can expect the following procedure to take <<X>> minutes.");
+    var minutes = totalMinutes(report);
+    if(minutes === 1){
+        text("The reader can expect the following procedure to take " + minutes + " minute.");
+    }
+    else {
+        text("The reader can expect the following procedure to take " + minutes + " minutes.");
+    }
     
     nextLine();
     newPage();
