@@ -453,7 +453,12 @@ function procedure_step(project_dir,i){
     h2(i.caption);
     app().Selection.TypeBackspace();
     down(2);
-    text("Estimated Time Required: " + i.minutes + " minutes");
+	if(i.minutes === 1){
+		text("Estimated Time Required: " + i.minutes + " minute");
+	}
+	else{
+		text("Estimated Time Required: " + i.minutes + " minutes");
+	}
     down(2);
     var p = pic(project_dir + "\\screenshots\\" + i.screenshot, true, true);
     up(1);
