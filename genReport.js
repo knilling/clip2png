@@ -543,6 +543,7 @@ function initConfig(){
 function genReport(){
     var config = initConfig();
     var report = JSON.parse(readFile(config.report));
+    _.map(report, function(x,n) { x.caption = "Step " + parseInt(n+1) + ": " + x.caption; });
     if(!FS().FileExists(config.logo)){
         VB.MsgBox(config.logo + " does not exist!  You need a PNG file in that location in order to generate a report.",16,"Where's your logo file?!?");
         WScript.Quit();
