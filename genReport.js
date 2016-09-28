@@ -475,10 +475,10 @@ function procedure_step(project_dir,i){
     down(2);
 	var min = parseInt(i.minutes);
 	if(min === 1){
-		text("Estimated Time Required: " + min + " minute");
+		text("Estimated Time Required: " + min + " minute.");
 	}
 	else{
-		text("Estimated Time Required: " + min + " minutes");
+		text("Estimated Time Required: " + min + " minutes.");
 	}
     down(2);
     var p = pic(project_dir + "\\screenshots\\" + i.screenshot, true, true);
